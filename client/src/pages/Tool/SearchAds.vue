@@ -40,13 +40,21 @@
             Scan Page
           </button>
           <button
-          v-if="isDisabledScan"
-          type="button"
-          class="btn btn-primary"
-          @click="ResumeScan()"
-        >
-          Tạm dừng
-        </button>
+            v-if="isDisabledScan"
+            type="button"
+            class="btn btn-primary"
+            @click="ResumeScan()"
+          >
+            Tạm dừng
+          </button>
+          <button
+            type="button"
+            class="btn btn-warning"
+            :disabled="isDisabledOpenPage"
+            @click="openPage()"
+          >
+            Open Tab
+          </button>
         </div>
       </form>
     </div>
@@ -64,10 +72,13 @@
     </div> -->
     <div class="container overflow-auto">
       <div>
-        <span class="badge bg-primary"> Tổng Page: {{ArrayPage.length}}</span>
-        <span class="badge bg-success"> Tổng Page Đã Lọc Trùng: {{filteredArray.length}}</span>  
+        <span class="badge bg-primary"> Tổng Page: {{ ArrayPage.length }}</span>
+        <span class="badge bg-success">
+          Tổng Page Đã Lọc Trùng: {{ filteredArray.length }}</span
+        >
       </div>
       <b-table
+        v-if="filteredArray.length > 0"
         id="my-table"
         :items="filteredArray"
         :fields="fields"
@@ -75,20 +86,33 @@
         :current-page="currentPage"
         small
       >
-      <template #cell(index)="data">
-        {{ filteredArray.indexOf(data.item) + 1 }}
-      </template>
-      <template #cell(action)="data">
-        <span><a target="_blank" rel="noopener noreferrer" :href="`https://facebook.com/${data.item.pageID}`">Open Page</a></span>
-      </template>
-    </b-table>
-
+        <template #cell(index)="data">
+          {{ filteredArray.indexOf(data.item) + 1 }}
+        </template>
+        <template #cell(status)="data">
+          <b-badge variant="success" class="active-row" v-if="data.item.isActive"
+            >Hoạt động</b-badge
+          >
+          <b-badge variant="danger" class="inactive-row" v-else>Không hoạt động</b-badge>
+        </template>
+        <template #cell(action)="data">
+          <span
+            ><a
+              target="_blank"
+              rel="noopener noreferrer"
+              :href="`https://facebook.com/${data.item.pageID}`"
+              >Open Page</a
+            ></span
+          >
+        </template>
+      </b-table>
       <b-pagination
-      v-model="currentPage"
-      :total-rows="filteredArray.length"
-      :per-page="perPage"
-      aria-controls="my-table"
-    ></b-pagination>
+        v-if="filteredArray.length > perPage"
+        v-model="currentPage"
+        :total-rows="filteredArray.length"
+        :per-page="perPage"
+        aria-controls="my-table"
+      ></b-pagination>
     </div>
   </div>
 </template>
@@ -352,81 +376,127 @@ export default {
         country: "US",
         count: 30,
         dataHtml: null,
-        inputforwardCursor: '',
-        inputcollationToken: ''
+        inputforwardCursor: "",
+        inputcollationToken: "",
       },
       loading: false,
       isDisabledScan: false,
       isResumeScan: false,
+      isDisabledOpenPage: false,
       dem_page: 0,
       ArrayPage: [],
       filteredArray: [],
-      page_data: '',
-      page_data_filtered: '',
+      page_data: "",
+      page_data_filtered: "",
       perPage: 30,
       currentPage: 1,
       fields: [
-        { key: 'index', label: 'Index' },
-        { key: 'pageID', label: 'Page ID' },
-        { key: 'pageName', label: 'Page Name' },
-        { key: 'action', label: 'Action' },
-      ]
+        { key: "index", label: "Index" },
+        { key: "pageID", label: "Page ID" },
+        { key: "pageName", label: "Page Name" },
+        { key: "status", label: "Trạng thái" },
+        { key: "action", label: "Action" },
+      ],
     };
   },
+  computed: {
+    currentItems() {
+      // Tính toán các mục trên trang hiện tại dựa trên currentPage và perPage
+      const startIndex = (this.currentPage - 1) * this.perPage;
+      const endIndex = startIndex + this.perPage;
+      return this.filteredArray.slice(startIndex, endIndex);
+    },
+  },
   watch: {
-    ArrayPage: async function(value){
-      this.page_data = (await Promise.all(value.map((item) => `${item.pageID} | ${item.pageName}`))).join('\r\n')
-      this.filteredArray = await Promise.all(value.reduce((uniqueArray, currentItem) => {
+    ArrayPage: async function (value) {
+      this.page_data = (
+        await Promise.all(
+          value.map((item) => `${item.pageID} | ${item.pageName} | ${item.isActive}`)
+        )
+      ).join("\r\n");
+      this.filteredArray = await Promise.all(
+        value.reduce((uniqueArray, currentItem) => {
           // Kiểm tra xem pageID đã tồn tại trong uniqueArray chưa
-          const isDuplicate = uniqueArray.some((item) => item.pageID === currentItem.pageID);
-      
+          const isDuplicate = uniqueArray.some(
+            (item) => item.pageID === currentItem.pageID
+          );
+
           // Nếu chưa tồn tại, thêm đối tượng vào uniqueArray
           if (!isDuplicate) {
-              uniqueArray.push({ pageID: currentItem.pageID, pageName: currentItem.pageName });
+            uniqueArray.push({
+              pageID: currentItem.pageID,
+              pageName: currentItem.pageName,
+              isActive: currentItem.isActive,
+            });
           }
-      
+
           return uniqueArray;
-      }, []))
+        }, [])
+      );
     },
-    filteredArray: async function(value){
-      this.page_data_filtered = (await Promise.all(value.map((item) => `${item.pageID} | ${item.pageName}`))).join('\r\n')
-    }
+    filteredArray: async function (value) {
+      this.page_data_filtered = (
+        await Promise.all(
+          value.map((item) => `${item.pageID} | ${item.pageName} | ${item.isActive}`)
+        )
+      ).join("\r\n");
+    },
   },
   methods: {
+    openPage: function () {
+      this.loading = true;
+      this.isDisabledOpenPage = true;
+      try {
+        this.currentItems.forEach((item) => {
+          this.openNewTab(`https://facebook.com/${item.pageID}`);
+        });
+      } catch (error) {
+        console.log(error);
+      } finally {
+        this.loading = false;
+        this.isDisabledOpenPage = false;
+      }
+    },
     scanPage: async function () {
       this.loading = true;
       this.isDisabledScan = true;
       this.isResumeScan = false;
       try {
         const getSearchAds = await API().post("/facebook/get_search_ads", this.form);
-        if(getSearchAds.data.success){
-          if(this.dem_page == 0){
+        if (getSearchAds.data.success) {
+          if (this.dem_page == 0) {
             this.form.dataHtml = getSearchAds.data.data;
           }
-          if(!this.form.dataHtml){
-            return alert('Không thể get dữ liệu');
+          if (!this.form.dataHtml) {
+            return alert("Không thể get dữ liệu");
           }
-          while(true){
+          await this.delay(500);
+          while (true) {
             const searchAds = await API().post("/facebook/search_ads", this.form);
-            if(searchAds.data.success){
-              this.ArrayPage = this.ArrayPage.concat([...searchAds.data.data])
+            if (searchAds.data.success) {
+              this.ArrayPage = this.ArrayPage.concat([...searchAds.data.data]);
               this.form.inputforwardCursor = searchAds.data.forwardCursor;
               this.form.inputcollationToken = searchAds.data.collationToken;
-              if(!searchAds.data.forwardCursor || searchAds.data.forwardCursor == '' || !searchAds.data.collationToken || searchAds.data.collationToken == ''){
+              if (
+                !searchAds.data.forwardCursor ||
+                searchAds.data.forwardCursor == "" ||
+                !searchAds.data.collationToken ||
+                searchAds.data.collationToken == ""
+              ) {
                 break;
               }
-              if(this.isResumeScan){
+              if (this.isResumeScan) {
                 break;
               }
               this.dem_page++;
               await this.delay(5000);
-            }else{
+            } else {
               break;
             }
           }
-          return alert('Hoàn thành');
-        }else{
-          return alert('Không thể lấy dữ liệu từ fb');
+          return alert("Hoàn thành");
+        } else {
+          return alert("Không thể lấy dữ liệu từ fb");
         }
       } catch (error) {
         console.log(error);
@@ -436,13 +506,25 @@ export default {
         this.isResumeScan = true;
       }
     },
-    ResumeScan: function(){
+    ResumeScan: function () {
       this.isDisabledScan = false;
       this.isResumeScan = true;
     },
     delay: (delayInms) => {
-      return new Promise(resolve => setTimeout(resolve, delayInms));
-    }
+      return new Promise((resolve) => setTimeout(resolve, delayInms));
+    },
+    openNewTab(url) {
+      window.open(url, "_blank");
+    },
   },
 };
 </script>
+<style lang="css" scoped>
+.active-row {
+  background-color: #28a745; /* Màu xanh cho hàng hoạt động */
+}
+
+.inactive-row {
+  background-color: #dc3545; /* Màu đỏ cho hàng không hoạt động */
+}
+</style>

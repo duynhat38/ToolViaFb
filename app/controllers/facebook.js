@@ -104,8 +104,9 @@ module.exports.searchAds = async function(req, res, next) {
             __dyn: '7xeUmxa3-Q8zo5ObwKBWobVo9E4a2i5U4e1FxebzEdF8ixy7EiwvoWdwJwCwfW7oqx60Vo1upEK12wvk1bwbG78b87C2m3K2y11xmfz81s8hwGwQwoE2LwBgao884y0Mo6i588Egze2a5E5afK1LwPxe3C0D8sDwJwKwHxaaws8nwhE2Lxiaw4JwJwSyES0gq0K-1LwqobU5G361pwr86C',
             __csr: '',
             // fb_dtsg: fb_dtsg,
-            jazoest: '2898',
             lsd: lsd,
+            jazoest: 28982,
+            // jazoest: Math.floor(Math.random() * (999999 - 1000 + 1)) + 1000,
             __spin_r: __spin_r,
             __spin_b: 'trunk',
             __spin_t: __spin_t,
@@ -115,6 +116,7 @@ module.exports.searchAds = async function(req, res, next) {
             headers: {
               'accept': '*/*',
               'Accept-Encoding': 'gzip, deflate, br',
+            //   'accept-language': 'vi-VN,vi;q=0.9',
               'accept-language': 'vi',
               'Content-Length': '472',
               'content-type': 'application/x-www-form-urlencoded',
@@ -156,6 +158,7 @@ module.exports.searchAds = async function(req, res, next) {
         const newResults = await Promise.all(flattenedArray.map((item) => ({
             pageID: item.pageID,
             pageName: item.pageName,
+            isActive: item.isActive
         })))
         return res.status(200).json({
             success: true,
