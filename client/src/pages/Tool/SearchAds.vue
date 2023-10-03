@@ -448,10 +448,13 @@ export default {
       this.loading = true;
       this.isDisabledOpenPage = true;
       try {
+        // this.currentItems.forEach((item, index) => {
+        //   setTimeout(() => {
+        //     this.openNewTab(`${item.page_profile_uri}`);
+        //   }, index * 2000); // Mỗi lần mở tab chờ 2 giây (2000 mili giây)
+        // });
         this.currentItems.forEach((item, index) => {
-          setTimeout(() => {
-            this.openNewTab(`${item.page_profile_uri}`);
-          }, index * 2000); // Mỗi lần mở tab chờ 2 giây (2000 mili giây)
+          this.openNewTab(`${item.page_profile_uri}`);
         });
       } catch (error) {
         console.log(error);
