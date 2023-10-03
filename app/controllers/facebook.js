@@ -105,8 +105,8 @@ module.exports.searchAds = async function(req, res, next) {
             __csr: '',
             // fb_dtsg: fb_dtsg,
             lsd: lsd,
-            jazoest: 28982,
-            // jazoest: Math.floor(Math.random() * (999999 - 1000 + 1)) + 1000,
+            jazoest: '28982',
+            // jazoest: (Math.floor(Math.random() * (999999 - 1000 + 1)) + 1000).toString(),
             __spin_r: __spin_r,
             __spin_b: 'trunk',
             __spin_t: __spin_t,
@@ -158,7 +158,8 @@ module.exports.searchAds = async function(req, res, next) {
         const newResults = await Promise.all(flattenedArray.map((item) => ({
             pageID: item.pageID,
             pageName: item.pageName,
-            isActive: item.isActive
+            isActive: item.isActive,
+            page_profile_uri: item.snapshot.page_profile_uri
         })))
         return res.status(200).json({
             success: true,

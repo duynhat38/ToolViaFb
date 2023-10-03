@@ -100,7 +100,7 @@
             ><a
               target="_blank"
               rel="noopener noreferrer"
-              :href="`https://facebook.com/${data.item.pageID}`"
+              :href="`${data.item.page_profile_uri}`"
               >Open Page</a
             ></span
           >
@@ -411,7 +411,7 @@ export default {
     ArrayPage: async function (value) {
       this.page_data = (
         await Promise.all(
-          value.map((item) => `${item.pageID} | ${item.pageName} | ${item.isActive}`)
+          value.map((item) => `${item.pageID} | ${item.pageName} | ${item.isActive} | ${item.page_profile_uri}`)
         )
       ).join("\r\n");
       this.filteredArray = await Promise.all(
@@ -427,6 +427,7 @@ export default {
               pageID: currentItem.pageID,
               pageName: currentItem.pageName,
               isActive: currentItem.isActive,
+              page_profile_uri: currentItem.page_profile_uri
             });
           }
 
@@ -437,7 +438,7 @@ export default {
     filteredArray: async function (value) {
       this.page_data_filtered = (
         await Promise.all(
-          value.map((item) => `${item.pageID} | ${item.pageName} | ${item.isActive}`)
+          value.map((item) => `${item.pageID} | ${item.pageName} | ${item.isActive} | ${item.page_profile_uri}`)
         )
       ).join("\r\n");
     },
@@ -447,8 +448,10 @@ export default {
       this.loading = true;
       this.isDisabledOpenPage = true;
       try {
-        this.currentItems.forEach((item) => {
-          this.openNewTab(`https://facebook.com/${item.pageID}`);
+        this.currentItems.forEach((item, index) => {
+          setTimeout(() => {
+            this.openNewTab(`${item.page_profile_uri}`);
+          }, index * 2000); // Mỗi lần mở tab chờ 2 giây (2000 mili giây)
         });
       } catch (error) {
         console.log(error);
