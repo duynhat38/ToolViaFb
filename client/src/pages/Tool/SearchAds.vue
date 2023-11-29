@@ -58,25 +58,25 @@
         </div>
       </form>
     </div>
-    <!-- <div class="container">
-      <div class="form-group">
-        <label for="comment">Page Data:</label>
-        <span class="badge bg-primary"> Tổng Page: {{ArrayPage.length}}</span>
-        <textarea class="form-control" rows="10" id="comment" :disabled="true" v-model="page_data"></textarea>
-      </div>
-      <div class="form-group">
-        <label for="comment">Page Data Lọc Trùng:</label>
-        <span class="badge bg-success">Tổng Page Đã Lọc Trùng: {{filteredArray.length}}</span>
-        <textarea class="form-control" rows="10" id="comment" :disabled="true" v-model="page_data_filtered"></textarea>
-      </div>
-    </div> -->
-    <div class="container overflow-auto">
+    <div class="container">
       <div>
         <span class="badge bg-primary"> Tổng Page: {{ ArrayPage.length }}</span>
         <span class="badge bg-success">
           Tổng Page Đã Lọc Trùng: {{ filteredArray.length }}</span
         >
       </div>
+      <div class="form-group p-3">
+        <label for="page_data">Page Data:</label>
+        <button type="button" class="btn btn-sm btn-warning m-2" @click="copyToClipboard(page_data)">Copy</button>
+        <textarea class="form-control" rows="10" id="page_data" :disabled="true" v-model="page_data"></textarea>
+      </div>
+      <div class="form-group p-3">
+        <label for="page_data_filtered">Page Data Lọc Trùng:</label>
+        <button type="button" class="btn btn-sm btn-warning m-2" @click="copyToClipboard(page_data_filtered)">Copy</button>
+        <textarea class="form-control" rows="10" id="page_data_filtered" :disabled="true" v-model="page_data_filtered"></textarea>
+      </div>
+    </div>
+    <div class="container overflow-auto">
       <b-table
         v-if="filteredArray.length > 0"
         id="my-table"
@@ -411,7 +411,7 @@ export default {
     ArrayPage: async function (value) {
       this.page_data = (
         await Promise.all(
-          value.map((item) => `${item.pageID} | ${item.pageName} | ${item.isActive} | ${item.page_profile_uri}`)
+          value.map((item) => `${item.pageID}`)
         )
       ).join("\r\n");
       this.filteredArray = await Promise.all(
@@ -438,12 +438,20 @@ export default {
     filteredArray: async function (value) {
       this.page_data_filtered = (
         await Promise.all(
-          value.map((item) => `${item.pageID} | ${item.pageName} | ${item.isActive} | ${item.page_profile_uri}`)
+          value.map((item) => `${item.pageID}`)
         )
       ).join("\r\n");
     },
   },
   methods: {
+    copyToClipboard(text) {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    },
     openPage: function () {
       this.loading = true;
       this.isDisabledOpenPage = true;
