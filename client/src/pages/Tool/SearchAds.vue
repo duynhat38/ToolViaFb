@@ -5,13 +5,14 @@
       <form>
         <div class="form-group">
           <label for="usr">Từ khóa tìm kiếm:</label>
-          <input
+          <textarea class="form-control" rows="5" id="list_keyword" :disabled="isDisabledScan" v-model="form.list_keyword"></textarea>
+          <!-- <input
             type="text"
             class="form-control"
             id="q"
             :disabled="isDisabledScan"
             v-model="form.q"
-          />
+          /> -->
         </div>
         <div class="form-group">
           <label for="sel1">Chọn quốc gia:</label>
@@ -35,7 +36,7 @@
             type="button"
             class="btn btn-primary"
             :disabled="isDisabledScan"
-            @click="scanPage()"
+            @click="submitScanPage()"
           >
             Scan Page
           </button>
@@ -372,7 +373,8 @@ export default {
         " EH",
       ],
       form: {
-        q: "agency",
+        list_keyword: '',
+        q: "",
         country: "US",
         count: 30,
         dataHtml: null,
@@ -383,7 +385,6 @@ export default {
       isDisabledScan: false,
       isResumeScan: false,
       isDisabledOpenPage: false,
-      dem_page: 0,
       ArrayPage: [],
       filteredArray: [],
       page_data: "",
@@ -471,26 +472,47 @@ export default {
         this.isDisabledOpenPage = false;
       }
     },
-    scanPage: async function () {
+    submitScanPage: async function () {
       this.loading = true;
       this.isDisabledScan = true;
       this.isResumeScan = false;
       try {
-        const getSearchAds = await API().post("/facebook/get_search_ads", this.form);
+        const promises = this.form.list_keyword.split('\n').filter(item => item && item.trim() !== '').map(item => this.scanPage(item.trim()));
+        await Promise.all(promises);
+      } catch (error) {
+        console.log(error);
+      } finally {
+        this.loading = false;
+        this.isDisabledScan = false;
+        this.isResumeScan = true;
+      }
+    },
+    scanPage: async function(keyword){
+      try {
+        let formPost = {
+          q: keyword,
+          country: this.form.country,
+          count: this.form.count,
+          dataHtml: null,
+          inputforwardCursor: "",
+          inputcollationToken: "",
+        }
+        let dem_page = 0;
+        const getSearchAds = await API().post("/facebook/get_search_ads", formPost);
         if (getSearchAds.data.success) {
-          if (this.dem_page == 0) {
-            this.form.dataHtml = getSearchAds.data.data;
+          if (dem_page == 0) {
+            formPost.dataHtml = getSearchAds.data.data;
           }
-          if (!this.form.dataHtml) {
+          if (!formPost.dataHtml) {
             return alert("Không thể get dữ liệu");
           }
           await this.delay(500);
           while (true) {
-            const searchAds = await API().post("/facebook/search_ads", this.form);
+            const searchAds = await API().post("/facebook/search_ads", formPost);
             if (searchAds.data.success) {
               this.ArrayPage = this.ArrayPage.concat([...searchAds.data.data]);
-              this.form.inputforwardCursor = searchAds.data.forwardCursor;
-              this.form.inputcollationToken = searchAds.data.collationToken;
+              formPost.inputforwardCursor = searchAds.data.forwardCursor;
+              formPost.inputcollationToken = searchAds.data.collationToken;
               if (
                 !searchAds.data.forwardCursor ||
                 searchAds.data.forwardCursor == "" ||
@@ -502,22 +524,18 @@ export default {
               if (this.isResumeScan) {
                 break;
               }
-              this.dem_page++;
+              dem_page++;
               await this.delay(5000);
             } else {
               break;
             }
           }
-          return alert("Hoàn thành");
-        } else {
-          return alert("Không thể lấy dữ liệu từ fb");
+          return;
         }
+        return;
       } catch (error) {
-        console.log(error);
-      } finally {
-        this.loading = false;
-        this.isDisabledScan = false;
-        this.isResumeScan = true;
+        console.log(error)
+        return;
       }
     },
     ResumeScan: function () {
